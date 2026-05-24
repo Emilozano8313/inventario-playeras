@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario Playeras</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+  :root {
+    --verde: #00a550;
+    --verde-dark: #007a3d;
+    --verde-light: #e8f7ee;
+    --rojo: #e63946;
+    --rojo-light: #fdecea;
+    --azul: #1d3557;
+    --gris: #f4f4f4;
+    --gris-med: #d1d1d1;
+    --gris-dark: #888;
+    --blanco: #ffffff;
+    --texto: #1a1a1a;
+    --texto-suave: #555;
+    --sombra: 0 2px 12px rgba(0,0,0,0.08);
+    --radio: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: #f0f2f0;
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--azul);
+    color: white;
+    padding: 18px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 10px; }
+
+  .escudo {
+    width: 38px; height: 38px;
+    background: var(--verde);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+  }
+  header h1 span {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 0.65;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .status-bar {
+    background: var(--azul);
+    padding: 0 20px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #aaa;
+    transition: background 0.3s;
+  }
+  .dot.online { background: #4ade80; }
+  .dot.offline { background: #f87171; }
+  .dot.syncing { background: #fbbf24; }
+
+  .resumen {
+    margin: 16px 16px 0;
+    background: white;
+    border-radius: var(--radio);
+    padding: 16px 18px;
+    box-shadow: var(--sombra);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .resumen-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--verde-dark);
+    line-height: 1;
+  }
+
+  .resumen-info { flex: 1; }
+  .resumen-label {
+    font-size: 13px;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .resumen-equipo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--azul);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge-color {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--verde);
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .btn-sync {
+    background: var(--verde-light);
+    border: none;
+    border-radius: 99px;
+    padding: 7px 14px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--verde-dark);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .btn-sync:active { transform: scale(0.96); }
+  .btn-sync.spinning span { display: inline-block; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .alerta-bajo {
+    margin: 10px 16px 0;
+    background: #fff8e1;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #78350f;
+    display: none;
+  }
+  .alerta-bajo.visible { display: block; }
+
+  .pendientes-banner {
+    margin: 10px 16px 0;
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #1e40af;
+    display: none;
+  }
+  .pendientes-banner.visible { display: block; }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gris-dark);
+    padding: 18px 20px 8px;
+  }
+
+  .tallas-grid {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 100px;
+  }
+
+  .talla-card {
+    background: white;
+    border-radius: var(--radio);
+    padding: 14px 16px;
+    box-shadow: var(--sombra);
+    transition: transform 0.1s;
+  }
+  .talla-card:active { transform: scale(0.99); }
+  .talla-card.agotado { opacity: 0.6; }
+  .talla-card.bajo { border-left: 3px solid #f59e0b; }
+
+  .talla-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .talla-nombre {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--azul);
+    letter-spacing: 0.5px;
+  }
+
+  .talla-stock { display: flex; align-items: center; gap: 6px; }
+  .stock-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--texto);
+    min-width: 36px;
+    text-align: right;
+  }
+  .stock-num.cero { color: var(--rojo); }
+  .stock-label {
+    font-size: 11px;
+    color: var(--gris-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+  }
+
+  .talla-btns {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 6px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    letter-spacing: 0.3px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(0.95); }
+
+  .btn-vender {
+    background: var(--rojo-light);
+    color: var(--rojo);
+    flex: 2;
+  }
+  .btn-vender:active { background: #f5c6c6; }
+  .btn-vender:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-mas1, .btn-mas5, .btn-mas10 {
+    background: var(--verde-light);
+    color: var(--verde-dark);
+  }
+  .btn-mas1:active, .btn-mas5:active, .btn-mas10:active { background: #c3ecd5; }
+
+  /* LOADING SKELETON */
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    border-radius: 8px;
+    height: 90px;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    background: var(--azul);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 13px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 16px rgba(29,53,87,0.35);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 200;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: scale(0.96); }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 300;
+    display: none;
+    align-items: flex-end;
+  }
+  .overlay.visible { display: flex; }
+
+  .modal {
+    background: white;
+    width: 100%;
+    max-height: 70vh;
+    border-radius: 20px 20px 0 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    padding: 18px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--gris);
+  }
+  .modal-header h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--azul);
+  }
+  .btn-cerrar {
+    background: var(--gris);
+    border: none;
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--texto-suave);
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    padding: 12px 20px 24px;
+    flex: 1;
+  }
+
+  .log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--gris);
+    font-size: 14px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-accion { color: var(--texto); }
+  .log-accion span { color: var(--gris-dark); font-size: 12px; display: block; }
+  .log-cambio {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .log-cambio.venta { color: var(--rojo); }
+  .log-cambio.entrada { color: var(--verde-dark); }
+  .log-vacio { text-align: center; color: var(--gris-dark); font-size: 14px; padding: 30px 0; }
+
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--azul);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    white-space: nowrap;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="escudo">⚽</div>
+    <h1>
+      Inventario
+      <span>Playeras de fútbol</span>
+    </h1>
+  </div>
+  <button class="btn-sync" id="btn-sync" onclick="sincronizar()">
+    <span>↻</span> Sincronizar
+  </button>
+</header>
+
+<div class="status-bar">
+  <div class="dot" id="dot"></div>
+  <span id="status-txt">Conectando...</span>
+</div>
+
+<div class="resumen">
+  <div class="resumen-num" id="total-stock">—</div>
+  <div class="resumen-info">
+    <div class="resumen-label">Playeras en total</div>
+    <div class="resumen-equipo">
+      <span class="badge-color"></span>
+      México Local · Verde
+    </div>
+  </div>
+</div>
+
+<div class="alerta-bajo" id="alerta-bajo">⚠️ Hay tallas con poco stock. Revisa el inventario.</div>
+<div class="pendientes-banner" id="pendientes-banner">🔄 Tienes cambios offline pendientes de sincronizar.</div>
+
+<div class="section-title">Stock por talla</div>
+<div class="tallas-grid" id="tallas-grid">
+  <div class="skeleton"></div>
+  <div class="skeleton"></div>
+  <div class="skeleton"></div>
+</div>
+
+<button class="fab" onclick="abrirHistorial()">📋 Historial</button>
+
+<div class="overlay" id="overlay" onclick="cerrarHistorial(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Historial de movimientos</h2>
+      <button class="btn-cerrar" onclick="cerrarHistorial()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="log-vacio">Cargando...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://bumtidxmoncijpvmhhfm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_2D2utH5u4ZTYqNcD_LPU9g_0ZuHylv4';
+const MINIMO_ALERTA = 2;
+
+// ---- SUPABASE FETCH HELPERS ----
+async function sbGet(tabla, params = '') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabla}${params}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    }
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbPatch(tabla, filtro, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabla}?${filtro}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbInsert(tabla, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabla}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ---- ESTADO LOCAL ----
+let inventario = JSON.parse(localStorage.getItem('inv_cache') || '{}');
+let pendientes = JSON.parse(localStorage.getItem('inv_pendientes') || '[]');
+
+function guardarCache() {
+  localStorage.setItem('inv_cache', JSON.stringify(inventario));
+}
+function guardarPendientes() {
+  localStorage.setItem('inv_pendientes', JSON.stringify(pendientes));
+}
+
+// ---- UI HELPERS ----
+function setStatus(tipo, texto) {
+  document.getElementById('dot').className = 'dot ' + tipo;
+  document.getElementById('status-txt').textContent = texto;
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function actualizarBannerPendientes() {
+  document.getElementById('pendientes-banner').classList.toggle('visible', pendientes.length > 0);
+}
+
+// ---- RENDER ----
+function renderTallas() {
+  const grid = document.getElementById('tallas-grid');
+  const tallas = Object.keys(inventario);
+  if (tallas.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;color:#888;padding:30px;font-size:14px;">No se encontraron tallas.</div>';
+    return;
+  }
+
+  let total = 0;
+  let algunoBajo = false;
+  grid.innerHTML = '';
+
+  tallas.forEach(talla => {
+    const stock = inventario[talla];
+    total += stock;
+    const bajo = stock > 0 && stock <= MINIMO_ALERTA;
+    const agotado = stock === 0;
+    if (bajo || agotado) algunoBajo = true;
+
+    const card = document.createElement('div');
+    card.className = 'talla-card' + (agotado ? ' agotado' : bajo ? ' bajo' : '');
+    card.innerHTML = `
+      <div class="talla-top">
+        <div class="talla-nombre">Talla ${talla}</div>
+        <div class="talla-stock">
+          <div class="stock-num ${agotado ? 'cero' : ''}">${stock}</div>
+          <div class="stock-label">piezas<br>disponibles</div>
+        </div>
+      </div>
+      <div class="talla-btns">
+        <button class="btn btn-vender" onclick="vender('${talla}')" ${agotado ? 'disabled' : ''}>− Vender</button>
+        <button class="btn btn-mas1" onclick="agregar('${talla}', 1)">+1</button>
+        <button class="btn btn-mas5" onclick="agregar('${talla}', 5)">+5</button>
+        <button class="btn btn-mas10" onclick="agregar('${talla}', 10)">+10</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('total-stock').textContent = total;
+  document.getElementById('alerta-bajo').classList.toggle('visible', algunoBajo);
+}
+
+// ---- CARGAR DESDE SUPABASE ----
+async function cargarDesdeSupabase() {
+  const datos = await sbGet('inventario', '?select=talla,stock&order=id');
+  datos.forEach(row => { inventario[row.talla] = row.stock; });
+  guardarCache();
+  renderTallas();
+}
+
+// ---- SINCRONIZAR PENDIENTES ----
+async function enviarPendientes() {
+  if (pendientes.length === 0) return;
+  const copia = [...pendientes];
+  for (const p of copia) {
+    if (p.tipo === 'stock') {
+      await sbPatch('inventario', `talla=eq.${p.talla}`, { stock: p.stock, actualizado_en: new Date().toISOString() });
+    } else if (p.tipo === 'historial') {
+      await sbInsert('historial', { talla: p.talla, tipo: p.accion, cantidad: p.cantidad });
+    }
+  }
+  pendientes = [];
+  guardarPendientes();
+  actualizarBannerPendientes();
+}
+
+async function sincronizar() {
+  const btn = document.getElementById('btn-sync');
+  btn.classList.add('spinning');
+  setStatus('syncing', 'Sincronizando...');
+  try {
+    await enviarPendientes();
+    await cargarDesdeSupabase();
+    setStatus('online', 'Sincronizado con la nube ✓');
+    mostrarToast('✅ Inventario actualizado');
+  } catch (e) {
+    setStatus('offline', 'Sin conexión — modo offline activo');
+    mostrarToast('⚠️ Sin conexión, trabajando offline');
+  }
+  btn.classList.remove('spinning');
+}
+
+// ---- ACCIONES ----
+function vender(talla) {
+  if ((inventario[talla] || 0) <= 0) return;
+  inventario[talla]--;
+  guardarCache();
+
+  pendientes.push({ tipo: 'stock', talla, stock: inventario[talla] });
+  pendientes.push({ tipo: 'historial', talla, accion: 'venta', cantidad: 1 });
+  guardarPendientes();
+  actualizarBannerPendientes();
+
+  renderTallas();
+  mostrarToast(`✅ Vendida talla ${talla} — quedan ${inventario[talla]}`);
+
+  if (navigator.onLine) sincronizar();
+}
+
+function agregar(talla, cantidad) {
+  inventario[talla] = (inventario[talla] || 0) + cantidad;
+  guardarCache();
+
+  pendientes.push({ tipo: 'stock', talla, stock: inventario[talla] });
+  pendientes.push({ tipo: 'historial', talla, accion: 'entrada', cantidad });
+  guardarPendientes();
+  actualizarBannerPendientes();
+
+  renderTallas();
+  mostrarToast(`📦 +${cantidad} talla ${talla} — total: ${inventario[talla]}`);
+
+  if (navigator.onLine) sincronizar();
+}
+
+// ---- HISTORIAL ----
+async function abrirHistorial() {
+  document.getElementById('overlay').classList.add('visible');
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '<div class="log-vacio">Cargando...</div>';
+  try {
+    const datos = await sbGet('historial', '?select=talla,tipo,cantidad,fecha&order=fecha.desc&limit=50');
+    if (datos.length === 0) {
+      body.innerHTML = '<div class="log-vacio">No hay movimientos aún.</div>';
+      return;
+    }
+    body.innerHTML = datos.map(h => {
+      const fecha = new Date(h.fecha).toLocaleString('es-MX', { hour12: false, dateStyle: 'short', timeStyle: 'short' });
+      return `
+        <div class="log-item">
+          <div class="log-accion">
+            ${h.tipo === 'venta' ? '🏷️ Venta' : '📦 Entrada'} — Talla ${h.talla}
+            <span>${fecha}</span>
+          </div>
+          <div class="log-cambio ${h.tipo}">${h.tipo === 'venta' ? '−1' : '+' + h.cantidad}</div>
+        </div>
+      `;
+    }).join('');
+  } catch {
+    body.innerHTML = '<div class="log-vacio">Sin conexión — historial no disponible offline.</div>';
+  }
+}
+
+function cerrarHistorial(e) {
+  if (!e || e.target === document.getElementById('overlay')) {
+    document.getElementById('overlay').classList.remove('visible');
+  }
+}
+
+// ---- CONEXIÓN ----
+window.addEventListener('online', () => sincronizar());
+window.addEventListener('offline', () => setStatus('offline', 'Sin conexión — modo offline activo'));
+
+// ---- INIT ----
+if (Object.keys(inventario).length > 0) {
+  renderTallas();
+  setStatus('offline', 'Cargando desde caché...');
+}
+actualizarBannerPendientes();
+sincronizar();
+</script>
+</body>
+</html>
